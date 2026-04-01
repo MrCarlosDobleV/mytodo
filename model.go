@@ -182,11 +182,7 @@ func updateConfirmDeleteMode(m model, msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
-	if m.quitting {
-		return "Bye!\n"
-	}
-
+func (m model) renderMainView() string {
 	var b strings.Builder
 
 	b.WriteString("mytodo\n\n")
@@ -210,21 +206,72 @@ func (m model) View() string {
 	}
 
 	b.WriteString("\n")
-
-	switch m.mode {
-	case modeNormal:
-		b.WriteString("j/k: move • a: add • e: edit • d: delete • x: toggle • q: quit\n")
-	case modeAdding:
-		b.WriteString("Add task: " + m.input + "\n")
-		b.WriteString("enter: save • esc: cancel\n")
-	case modeEditing:
-		b.WriteString("Edit task: " + m.input + "\n")
-		b.WriteString("enter: save • esc: cancel\n")
-	}
+	b.WriteString(m.renderStatusBar())
 
 	if m.err != nil {
 		b.WriteString("\nError: " + m.err.Error() + "\n")
 	}
 
 	return b.String()
+}
+
+func (m model) renderDeleteModal() string {
+	taskText := ""
+	if len(m.tasks) > 0 && m.cursor < len(m.tasks) {
+		taskText = m.tasks[m.cursor].Text
+	}
+
+	return fmt.Sprintf(
+		"┌──────────────────────────────┐\n"+
+			"│ Delete this task?            │\n"+
+			"│                              │\n"+
+			"│ %s\n"+
+			"│                              │\n"+
+			"│ [y] confirm    [n] cancel    │\n"+
+			"└──────────────────────────────┘",
+		truncate(taskText, 28),
+	)
+}
+
+func (m model) renderStatusBar() string {
+	modeLabel := "NORMAL"
+	help := "j/k move • a add • e edit • d delete • x toggle • q quit"
+
+	switch m.mode {
+	case modeAdding:
+		modeLabel = "ADDING"
+		help = "enter save • esc cancel"
+	case modeEditing:
+		modeLabel = "EDITING"
+		help = "enter save • esc cancel"
+	case modeConfirmDelete:
+		modeLabel = "CONFIRM DELETE"
+		help = "y confirm • n cancel"
+	}
+
+	position := "0/0"
+	if len(m.tasks) > 0 {
+		position = fmt.Sprintf("%d/%d", m.cursor+1, len(m.tasks))
+	}
+
+	return fmt.Sprintf("%s | %s | %s", modeLabel, position, help)
+}
+
+func truncate(s string, max int) string {
+	if len(s) <= max {
+		return s + strings.Repeat(" ", max-len(s))
+	}
+	return s[:max-3] + "..."
+}
+
+func (m model) View() string {
+	if m.quitting {
+		return "Bye!\n"
+	}
+	main := m.renderMainView()
+
+	if m.mode == modeConfirmDelete {
+		return main + "\n\n" + m.renderDeleteModal()
+	}
+	return main
 }
