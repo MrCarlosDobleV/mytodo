@@ -13,6 +13,7 @@ const (
 	modeNormal mode = iota
 	modeAdding
 	modeEditing
+	modeConfirmDelete
 )
 
 type model struct {
@@ -22,6 +23,9 @@ type model struct {
 	input    string
 	err      error
 	quitting bool
+
+	width  int
+	height int
 }
 
 func initialModel() model {
@@ -43,6 +47,11 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		return m, nil
+
 	case tea.KeyMsg:
 		switch m.mode {
 		case modeNormal:
@@ -51,6 +60,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return updateAddingMode(m, msg)
 		case modeEditing:
 			return updateEditingMode(m, msg)
+		case modeConfirmDelete:
+			return updateConfirmDeleteMode(m, msg)
 		}
 	}
 	return m, nil
@@ -77,11 +88,9 @@ func updateNormalMode(m model, msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.err = saveTasks(m.tasks)
 
 	case "d":
-		m.tasks = deleteTask(m.tasks, m.cursor)
-		if m.cursor >= len(m.tasks) && m.cursor > 0 {
-			m.cursor--
+		if len(m.tasks) > 0 {
+			m.mode = modeConfirmDelete
 		}
-		m.err = saveTasks(m.tasks)
 
 	case "a":
 		m.mode = modeAdding
@@ -153,6 +162,23 @@ func updateEditingMode(m model, msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	return m, nil
+}
+
+func updateConfirmDeleteMode(m model, msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "y", "enter":
+		if len(m.tasks) > 0 {
+			m.tasks = deleteTask(m.tasks, m.cursor)
+			if m.cursor >= len(m.tasks) && m.cursor > 0 {
+				m.cursor--
+			}
+			m.err = saveTasks(m.tasks)
+		}
+		m.mode = modeNormal
+	case "n", "esc":
+		m.mode = modeNormal
+	}
 	return m, nil
 }
 
