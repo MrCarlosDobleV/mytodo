@@ -206,6 +206,14 @@ func (m model) renderMainView() string {
 	}
 
 	b.WriteString("\n")
+
+	switch m.mode {
+	case modeAdding:
+		b.WriteString("Add task: " + m.input + "█\n\n")
+	case modeEditing:
+		b.WriteString("Edit task: " + m.input + "█\n\n")
+	}
+
 	b.WriteString(m.renderStatusBar())
 
 	if m.err != nil {
@@ -225,7 +233,7 @@ func (m model) renderDeleteModal() string {
 		"┌──────────────────────────────┐\n"+
 			"│ Delete this task?            │\n"+
 			"│                              │\n"+
-			"│ %s\n"+
+			"│ %s │\n"+
 			"│                              │\n"+
 			"│ [y] confirm    [n] cancel    │\n"+
 			"└──────────────────────────────┘",
