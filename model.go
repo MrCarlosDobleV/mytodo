@@ -333,19 +333,9 @@ func (m model) renderStatusBar() string {
 	}
 
 	gap := width - lipgloss.Width(left) - lipgloss.Width(right)
-	if gap < 1 {
-		gap = 1
-	}
-
+	gap = max(gap, 1)
 	bar := left + strings.Repeat(" ", gap) + right
 	return statusStyle.Width(width).Render(bar)
-}
-
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s + strings.Repeat(" ", max-len(s))
-	}
-	return s[:max-3] + "..."
 }
 
 func (m model) View() string {
