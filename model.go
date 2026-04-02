@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type mode int
@@ -27,6 +28,41 @@ type model struct {
 	width  int
 	height int
 }
+
+var (
+	modalStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			Padding(1, 2).
+			BorderForeground(lipgloss.Color("63"))
+
+	titleStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("205"))
+
+	dimStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("240"))
+
+	statusStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color("62")).
+			Foreground(lipgloss.Color("230")).
+			Padding(0, 1)
+
+	selectedStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color("63")).
+			Foreground(lipgloss.Color("230")).
+			Padding(0, 1)
+
+	inputLabelStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("69"))
+
+	inputStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("230"))
+
+	errorStyle = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(lipgloss.Color("196"))
+)
 
 func initialModel() model {
 	tasks, err := loadTask()
@@ -185,23 +221,36 @@ func updateConfirmDeleteMode(m model, msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m model) renderMainView() string {
 	var b strings.Builder
 
-	b.WriteString("mytodo\n\n")
+	b.WriteString(titleStyle.Render("mytodo"))
+	b.WriteString("\n\n")
 
 	if len(m.tasks) == 0 {
-		b.WriteString("No tasks yet.\n")
+		b.WriteString(dimStyle.Render("No tasks yet."))
+		b.WriteString("\n")
 	} else {
 		for i, task := range m.tasks {
-			cursor := " "
-			if i == m.cursor {
-				cursor = ">"
-			}
-
 			check := " "
 			if task.Done {
 				check = "x"
 			}
 
-			b.WriteString(fmt.Sprintf("%s [%s] %s\n", cursor, check, task.Text))
+			prefix := "  "
+			if i == m.cursor {
+				prefix = "> "
+			}
+
+			line := fmt.Sprintf("%s[%s] %s", prefix, check, task.Text)
+
+			if task.Done {
+				line = dimStyle.Render(line)
+			}
+
+			if i == m.cursor {
+				line = selectedStyle.Render(line)
+			}
+
+			b.WriteString(line)
+			b.WriteString("\n")
 		}
 	}
 
@@ -209,16 +258,21 @@ func (m model) renderMainView() string {
 
 	switch m.mode {
 	case modeAdding:
-		b.WriteString("Add task: " + m.input + "█\n\n")
+		b.WriteString(inputLabelStyle.Render("Add task: "))
+		b.WriteString(inputStyle.Render(m.input + "█"))
+		b.WriteString("\n\n")
 	case modeEditing:
-		b.WriteString("Edit task: " + m.input + "█\n\n")
+		b.WriteString(inputLabelStyle.Render("Edit task: "))
+		b.WriteString(inputStyle.Render(m.input + "█"))
+		b.WriteString("\n\n")
+	}
+
+	if m.err != nil {
+		b.WriteString(errorStyle.Render("Error: " + m.err.Error()))
+		b.WriteString("\n\n")
 	}
 
 	b.WriteString(m.renderStatusBar())
-
-	if m.err != nil {
-		b.WriteString("\nError: " + m.err.Error() + "\n")
-	}
 
 	return b.String()
 }
@@ -229,15 +283,22 @@ func (m model) renderDeleteModal() string {
 		taskText = m.tasks[m.cursor].Text
 	}
 
-	return fmt.Sprintf(
-		"┌──────────────────────────────┐\n"+
-			"│ Delete this task?            │\n"+
-			"│                              │\n"+
-			"│ %s │\n"+
-			"│                              │\n"+
-			"│ [y] confirm    [n] cancel    │\n"+
-			"└──────────────────────────────┘",
-		truncate(taskText, 28),
+	content := fmt.Sprintf(
+		"%s\n\n%s\n\n%s",
+		titleStyle.Render("Delete this task?"),
+		taskText,
+		dimStyle.Render("[y] confirm    [n] cancel"),
+	)
+
+	box := modalStyle.Render(content)
+
+	// center it
+	return lipgloss.Place(
+		m.width,
+		m.height,
+		lipgloss.Center,
+		lipgloss.Center,
+		box,
 	)
 }
 
