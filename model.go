@@ -44,12 +44,11 @@ var (
 
 	statusStyle = lipgloss.NewStyle().
 			Background(lipgloss.Color("62")).
-			Foreground(lipgloss.Color("230")).
-			Padding(0, 1)
+			Foreground(lipgloss.Color("230"))
 
 	selectedStyle = lipgloss.NewStyle().
-			Background(lipgloss.Color("63")).
-			Foreground(lipgloss.Color("230")).
+			Background(lipgloss.Color("62")).
+			Foreground(lipgloss.Color("235")).
 			Padding(0, 1)
 
 	inputLabelStyle = lipgloss.NewStyle().
@@ -323,7 +322,21 @@ func (m model) renderStatusBar() string {
 		position = fmt.Sprintf("%d/%d", m.cursor+1, len(m.tasks))
 	}
 
-	return fmt.Sprintf("%s | %s | %s", modeLabel, position, help)
+	left := fmt.Sprintf(" %s | %s ", modeLabel, position)
+	right := " " + help + " "
+
+	width := m.width
+	if width <= 0 {
+		width = len(left) + len(right)
+	}
+
+	gap := width - lipgloss.Width(left) - lipgloss.Width(right)
+	if gap < 1 {
+		gap = 1
+	}
+
+	bar := left + strings.Repeat(" ", gap) + right
+	return statusStyle.Width(width).Render(bar)
 }
 
 func truncate(s string, max int) string {
