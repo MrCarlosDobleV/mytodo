@@ -43,19 +43,17 @@ var (
 			Foreground(lipgloss.Color("240"))
 
 	statusStyle = lipgloss.NewStyle().
-			Background(lipgloss.Color("62")).
+			Background(lipgloss.Color("63")).
 			Foreground(lipgloss.Color("230"))
 
 	selectedStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("63")).
-		// Background(lipgloss.Color("62")).
-		// Foreground(lipgloss.Color("235")).
-		Padding(0, 1)
+			Padding(0, 1)
 
 	inputLabelStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("69"))
+			Foreground(lipgloss.Color("63"))
 
 	inputStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("230"))
