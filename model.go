@@ -37,7 +37,7 @@ var (
 
 	titleStyle = lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("205"))
+			Foreground(lipgloss.Color("63"))
 
 	dimStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("240"))
